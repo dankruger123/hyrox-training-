@@ -1,0 +1,19 @@
+{
+  "name": "HYROX 30-Day Training",
+  "short_name": "HYROX",
+  "description": "30-day Hyrox race prep training plan",
+  "start_url": "/hyrox-training-/",
+  "scope": "/hyrox-training-/",
+  "display": "standalone",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

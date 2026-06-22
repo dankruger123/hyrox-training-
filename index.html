@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HYROX 30-Day Training</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="HYROX"/>
+<meta name="theme-color" content="#0b0f14"/>
+<style>
+:root{--bg:#0b0f14;--surf:#141920;--surf2:#1d2430;--surf3:#252d3a;--ac:#c8f400;--text:#e8edf3;--muted:#7a8696;--bdr:#2a3340}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
+.page{display:none;max-width:640px;margin:0 auto;padding-bottom:60px;animation:fadeUp .22s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* Calendar */
+.cal-header{padding:24px 20px 18px;background:linear-gradient(180deg,var(--surf) 0%,var(--bg) 100%);border-bottom:1px solid var(--bdr)}
+.cal-dot{width:7px;height:7px;border-radius:50%;background:var(--ac);box-shadow:0 0 8px var(--ac);display:inline-block;margin-right:8px;vertical-align:middle}
+.cal-title{font-size:28px;font-weight:900;letter-spacing:-.03em;margin-top:2px}
+.cal-sub{font-size:13px;color:var(--muted);margin-top:3px}
+.prog-bar{height:4px;background:var(--surf3);border-radius:4px;margin-top:14px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,#c8f400,#39d353);border-radius:4px;transition:width .4s ease}
+.prog-labels{display:flex;justify-content:space-between;margin-top:5px}
+.prog-labels span{font-size:11px;color:#4a5568}
+.prog-labels span.pct{color:var(--ac);font-weight:800}
+.cal-body{padding:18px 14px}
+.dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+.dow-cell{text-align:center;font-size:11px;font-weight:700;color:#4a5568;padding:3px 0}
+.week-block{margin-bottom:14px}
+.week-label{font-size:10px;color:#4a5568;font-weight:700;letter-spacing:.1em;margin-bottom:5px}
+.week-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.day-btn{border-radius:10px;padding:8px 4px 7px;text-align:center;border:2px solid transparent;background:var(--surf2);cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.day-btn:hover{filter:brightness(1.2)}
+.day-btn.rest-day{background:#141920}
+.day-btn.done{border-color:var(--done-ac,#c8f400);background:color-mix(in srgb,var(--done-ac,#c8f400) 15%,transparent)}
+.day-num{font-size:13px;font-weight:900}
+.day-icon{font-size:15px;margin-top:1px}
+.day-dot{width:7px;height:7px;border-radius:50%;margin:3px auto 0}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;padding:14px;background:var(--surf);border-radius:10px;border:1px solid var(--bdr)}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.leg-dot{width:7px;height:7px;border-radius:50%}
+/* Day view */
+.day-topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--bdr);background:var(--surf);position:sticky;top:0;z-index:10}
+.back-btn{color:var(--muted);font-size:13px;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.05)}
+.nav-btns{display:flex;gap:8px}
+.nav-btn{color:var(--text);font-size:18px;padding:4px 10px;border-radius:8px;background:rgba(255,255,255,.06)}
+.nav-btn:disabled{color:var(--bdr);background:transparent;cursor:default}
+.day-header{padding:22px 20px 20px;border-bottom:1px solid rgba(200,244,0,.1)}
+.day-week-label{font-size:11px;font-weight:800;letter-spacing:.12em;margin-bottom:6px}
+.day-title-row{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.day-icon-big{font-size:36px;line-height:1}
+.day-type{font-size:22px;font-weight:900;letter-spacing:-.02em}
+.day-sublabel{font-size:14px;color:var(--muted);margin-top:2px}
+.day-stats{display:flex;gap:10px}
+.stat-box{flex:1;background:rgba(255,255,255,.04);border-radius:10px;padding:10px 14px;border:1px solid var(--bdr);text-align:left}
+.stat-val{font-size:18px;font-weight:900}
+.stat-lbl{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.1em;margin-top:2px}
+.day-body{padding:18px 16px}
+.section-label{font-size:10px;font-weight:700;color:var(--bdr);letter-spacing:.12em;margin-bottom:10px}
+.ex-card{background:var(--surf2);border-radius:12px;margin-bottom:9px;border:1px solid var(--bdr);transition:border-color .2s;overflow:hidden}
+.ex-card.open{border-color:rgba(200,244,0,.25)}
+.ex-inner{padding:14px 16px;cursor:pointer}
+.ex-row{display:flex;gap:12px;align-items:flex-start}
+.ex-num{width:26px;height:26px;border-radius:50%;flex-shrink:0;background:rgba(200,244,0,.1);border:1px solid rgba(200,244,0,.25);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:var(--ac)}
+.ex-content{flex:1;min-width:0}
+.ex-name-row{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.ex-name{font-weight:700;font-size:15px}
+.ex-chevron{color:#4a5568;font-size:12px;flex-shrink:0;transition:color .2s}
+.ex-card.open .ex-chevron{color:var(--ac)}
+.ex-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.badge{padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;border:1px solid transparent}
+.badge-sets{background:rgba(200,244,0,.1);border-color:rgba(200,244,0,.22);color:var(--ac);font-weight:800}
+.badge-detail{background:var(--surf);border-color:var(--bdr)}
+.badge-rest{background:rgba(74,154,255,.08);border-color:rgba(74,154,255,.18);color:#7a9cc8}
+.badge-rpe{font-weight:700}
+.howto{margin-top:12px;padding:12px 14px;background:rgba(200,244,0,.05);border-radius:8px;border-left:3px solid var(--ac)}
+.howto-label{font-size:10px;font-weight:800;color:var(--ac);letter-spacing:.12em;margin-bottom:8px}
+.howto-cue{display:flex;gap:8px;margin-bottom:7px}
+.howto-cue:last-child{margin-bottom:0}
+.howto-n{color:var(--ac);font-weight:800;font-size:11px;min-width:14px;padding-top:2px;flex-shrink:0}
+.howto-text{font-size:13px;color:#9ab0c0;line-height:1.55}
+.rest-empty{text-align:center;padding:60px 20px}
+.rest-emoji{font-size:52px;margin-bottom:14px}
+.rest-title{font-size:20px;font-weight:800;margin-bottom:8px}
+.rest-text{font-size:14px;color:var(--muted);line-height:1.65;max-width:280px;margin:0 auto}
+.race-banner{background:rgba(255,68,34,.08);border:1px solid rgba(255,68,34,.22);border-radius:12px;padding:14px 16px;margin-bottom:18px;text-align:center}
+.race-banner-title{font-weight:800;font-size:15px;color:#ff6644;margin-bottom:6px}
+.race-banner-text{font-size:13px;color:#9ab0c0;line-height:1.6}
+.complete-btn{width:100%;margin-top:18px;padding:16px;border-radius:12px;font-size:14px;font-weight:900;letter-spacing:.06em;transition:all .2s}
+.complete-btn.done{background:rgba(57,211,83,.12);color:#39d353;border:1px solid rgba(57,211,83,.3)}
+.complete-btn.todo{background:linear-gradient(135deg,#c8f400,#9bc100);color:#0b0f14;border:none}
+</style>
+</head>
+<body>
+
+<div id="cal-page" class="page active">
+  <div class="cal-header">
+    <div><span class="cal-dot"></span><span style="font-size:11px;font-weight:800;color:var(--ac);letter-spacing:.14em">HYROX TRAINING</span></div>
+    <div class="cal-title">30-Day Race Prep</div>
+    <div class="cal-sub" id="cal-sub">0 of 30 sessions complete</div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-labels"><span>Start</span><span class="pct" id="prog-pct">0%</span><span>Race Day</span></div>
+  </div>
+  <div class="cal-body">
+    <div class="dow-row">
+      <div class="dow-cell">Mo</div><div class="dow-cell">Tu</div><div class="dow-cell">We</div>
+      <div class="dow-cell">Th</div><div class="dow-cell">Fr</div><div class="dow-cell">Sa</div>
+      <div class="dow-cell">Su</div>
+    </div>
+    <div id="cal-grid"></div>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#4aa8ff"></div>Run</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#39d353"></div>Stations</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#c679ff"></div>Strength</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#f0a500"></div>Tempo</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#c8f400"></div>Sim / Race</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#7a9cc8"></div>Recovery</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#4a5568"></div>Rest</div>
+    </div>
+  </div>
+</div>
+
+<div id="day-page" class="page">
+  <div class="day-topbar">
+    <button class="back-btn" onclick="showCal()">← Calendar</button>
+    <div class="nav-btns">
+      <button class="nav-btn" id="prev-btn" onclick="navDay(-1)">‹</button>
+      <button class="nav-btn" id="next-btn" onclick="navDay(1)">›</button>
+    </div>
+  </div>
+  <div class="day-header" id="day-header"></div>
+  <div class="day-body" id="day-body"></div>
+</div>
+
+<script>
+/* ── DATA ── */
+const HT = {
+  skiErg:["Stand tall, grip handles overhead with arms fully extended.",
+    "Initiate by hinging at the hips and pulling both arms straight down simultaneously.",
+    "Drive the pull through to your hips with a slight knee bend at the bottom.",
+    "Float back up smoothly — let the flywheel reset, don't rush the top."],
+  sledPush:["Lean forward at ~45°, grip upright handles at hip height, stay low.",
+    "Drive with explosive leg pushes — short, powerful strides.",
+    "Arms stay locked rigid; all power comes from the legs and hips.",
+    "Breathe out on each push; maintain constant forward pressure."],
+  sledPull:["Face away from sled, rope running between your legs behind you.",
+    "Hinge at the hip, pull hand-over-hand walking backward.",
+    "Keep your back flat and core braced throughout — resist rounding.",
+    "Drive elbows back and down, use your whole body not just arms."],
+  burpeeBroadJump:["Drop chest-to-floor with feet extended behind — full burpee standard.",
+    "Push up and explosively jump feet forward to just outside your hands.",
+    "Swing arms back then forward; explode off both feet simultaneously.",
+    "Land softly with bent knees, absorb the impact before the next rep."],
+  rowing:["Drive sequence: LEGS push → lean back to 11 o'clock → pull arms to lower chest.",
+    "Recovery: arms extend first → lean forward → bend knees — opposite of drive.",
+    "Target 20–24 s/m for sustained effort; up to 26–28 s/m for sprint pieces.",
+    "Brace core the whole stroke — avoid 'shooting the slide' (legs before arms extend)."],
+  farmersCarry:["Grip weights firmly, wrists neutral — don't let them roll into extension.",
+    "Pack shoulders back and down; brace core like you're about to take a punch.",
+    "Take controlled, deliberate strides — avoid hip sway from going too heavy.",
+    "Look straight ahead; exhale on alternating steps to maintain your brace."],
+  sandbagLunge:["Hold sandbag at chest (bear hug) or draped across one shoulder.",
+    "Step forward — front shin vertical, back knee hovering just off the floor.",
+    "Keep chest tall and core tight; don't let the weight pull you forward.",
+    "Drive through your front heel to stand; alternate legs with each step."],
+  wallBalls:["Hold med ball at chest, feet shoulder-width, toes slightly flared out.",
+    "Squat deep — crease of hip below knee — then explode up and throw to the 10 ft target.",
+    "Catch ball at chest height; use its momentum to descend straight into the next squat.",
+    "Keep eyes fixed on the target; breathe out on the throw, in on the descent."],
+  running:["Land with a midfoot strike directly under your centre of mass.",
+    "Maintain a slight forward lean from the ankles — not the waist.",
+    "Keep shoulders relaxed and low; arms at 90° swinging front-to-back.",
+    "Breathe rhythmically: 2 counts in through nose, 2 counts out through mouth."],
+  kbSwing:["Hinge sharply at the hip, KB back between legs like a pendulum.",
+    "Drive hips forward explosively — power comes from the hip snap, not arm lifting.",
+    "At chest height (Russian) squeeze glutes hard before hinging back down.",
+    "Maintain a flat back throughout; never let the lower back round under load."],
+  boxJump:["Stand 12–18 inches from the box, feet hip-width; load hips and swing arms.",
+    "Jump explosively, pulling knees up to clear the height.",
+    "Land with both feet simultaneously in a soft quarter-squat — absorb, don't thud.",
+    "Stand fully on the box before stepping (not jumping) back down."],
+  gobletSquat:["Hold KB or DB vertically at chest, both hands cupped under the top.",
+    "Feet shoulder-width, toes turned out 15–30°; weight through the whole foot.",
+    "Squat until elbows touch inside of knees — use them to push knees out.",
+    "Drive through the whole foot to stand; keep the weight close to chest."],
+  rdl:["Stand tall, soft bend in knees — maintain that angle throughout.",
+    "Push hips straight back as if touching a wall behind you with your glutes.",
+    "Lower weights along your legs; keep back flat, feel the hamstring stretch.",
+    "Drive hips forward to return; squeeze glutes hard at the top."],
+  plank:["Forearms flat, elbows directly under shoulders — fists or palms is fine.",
+    "Body forms one rigid plank from crown to heels — no sagging hips.",
+    "Simultaneously squeeze quads, glutes, and abs; breathe slowly.",
+    "If form breaks, rest and reset rather than cheating position."],
+  tempoRun:["Pace feels 'comfortably hard' — you can speak a word but not a sentence.",
+    "Aim for RPE 7: controlled effort, definitely working, not all-out.",
+    "Focus on even pace throughout; starting too fast will make you fade.",
+    "This builds your lactate threshold — the engine for the whole race."],
+  strides:["Start easy, accelerate over the first 20 m to ~90% top speed.",
+    "Maintain that controlled sprint for the middle section.",
+    "Decelerate naturally over the final 20 m — don't slam the brakes.",
+    "Full recovery between each stride; these are quality, not conditioning."],
+};
+
+const TYPE_META={
+  "Running Intervals":{ac:"#4aa8ff",icon:"🏃"},
+  "Station Work":{ac:"#39d353",icon:"⚡"},
+  "Strength":{ac:"#c679ff",icon:"💪"},
+  "Tempo Run":{ac:"#f0a500",icon:"⏱"},
+  "Hyrox Simulation":{ac:"#c8f400",icon:"🔥"},
+  "Active Recovery":{ac:"#7a9cc8",icon:"🌿"},
+  "Easy Run":{ac:"#7a9cc8",icon:"🌿"},
+  "REST":{ac:"#4a5568",icon:"😴"},
+  "Race Activation":{ac:"#c8f400",icon:"⚡"},
+  "RACE DAY":{ac:"#ff4422",icon:"🏅"},
+};
+
+const WK_LABELS=["","Week 1 — Base","Week 2 — Build","Week 3 — Race Sim","Week 4 — Taper"];
+
+function ex(n,ht,sets,detail,rest,rpe){return{n,ht,sets,detail,rest,rpe};}
+
+const DAYS=[
+  {day:1,week:1,type:"Running Intervals",label:"Aerobic Base",dur:"45 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("400m Run Intervals","running",6,"400 m @ 5 K pace","90 sec walk",7),
+    ex("Cool-Down Jog","running",1,"5 min easy","—",3),
+    ex("Plank Hold","plank",3,"45 sec","30 sec",5),
+  ]},
+  {day:2,week:1,type:"Station Work",label:"SkiErg + Row Intro",dur:"50 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("SkiErg","skiErg",4,"250 m steady","60 sec",6),
+    ex("Rowing (Concept 2)","rowing",4,"500 m @ 2:05 / 500 m","90 sec",6),
+    ex("Kettlebell Swing","kbSwing",3,"15 reps","60 sec",6),
+  ]},
+  {day:3,week:1,type:"Strength",label:"Foundation",dur:"55 min",exercises:[
+    ex("Goblet Squat","gobletSquat",4,"10 reps @ moderate","90 sec",7),
+    ex("Romanian Deadlift","rdl",4,"10 reps @ moderate","90 sec",7),
+    ex("Kettlebell Swing","kbSwing",4,"12 reps","60 sec",7),
+    ex("Farmers Carry","farmersCarry",4,"40 m","90 sec",6),
+    ex("Plank Hold","plank",3,"50 sec","30 sec",6),
+  ]},
+  {day:4,week:1,type:"Tempo Run",label:"Aerobic Threshold",dur:"40 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("Tempo Run","tempoRun",1,"20 min continuous","—",7),
+    ex("Cool-Down Jog","running",1,"5 min easy","—",3),
+    ex("Goblet Squat","gobletSquat",3,"12 reps","60 sec",6),
+  ]},
+  {day:5,week:1,type:"Station Work",label:"Sled + Farmers Carry",dur:"55 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("Sled Push","sledPush",4,"20 m moderate load","90 sec",7),
+    ex("Sled Pull","sledPull",4,"20 m moderate load","90 sec",7),
+    ex("Farmers Carry","farmersCarry",4,"50 m","90 sec",7),
+    ex("Romanian Deadlift","rdl",3,"12 reps","60 sec",6),
+  ]},
+  {day:6,week:1,type:"Active Recovery",label:"Flush & Mobility",dur:"30 min",exercises:[
+    ex("Easy Walk / Jog","running",1,"15 min very easy","—",2),
+    ex("Goblet Squat","gobletSquat",2,"10 reps light weight","60 sec",3),
+    ex("Plank Hold","plank",2,"40 sec","30 sec",3),
+  ]},
+  {day:7,week:1,type:"REST",label:"Full Recovery",dur:"—",exercises:[]},
+  {day:8,week:2,type:"Running Intervals",label:"Progressive Volume",dur:"50 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("400m Run Intervals","running",8,"400 m @ 5 K pace","75 sec walk",7),
+    ex("Cool-Down Jog","running",1,"5 min easy","—",3),
+    ex("Plank Hold","plank",3,"60 sec","30 sec",6),
+  ]},
+  {day:9,week:2,type:"Station Work",label:"Jumps + Wall Balls",dur:"55 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("Box Jump","boxJump",4,"8 reps","75 sec",7),
+    ex("Burpee Broad Jump","burpeeBroadJump",4,"10 reps","90 sec",8),
+    ex("Wall Balls","wallBalls",4,"15 reps @ 6 / 9 kg","90 sec",7),
+    ex("Goblet Squat","gobletSquat",3,"12 reps","60 sec",6),
+  ]},
+  {day:10,week:2,type:"Strength",label:"Posterior Chain",dur:"60 min",exercises:[
+    ex("Romanian Deadlift","rdl",4,"8 reps heavy","2 min",8),
+    ex("Goblet Squat","gobletSquat",4,"10 reps","90 sec",7),
+    ex("Kettlebell Swing","kbSwing",5,"15 reps","60 sec",7),
+    ex("Farmers Carry","farmersCarry",4,"60 m","90 sec",7),
+    ex("Plank Hold","plank",3,"60 sec","30 sec",6),
+  ]},
+  {day:11,week:2,type:"Tempo Run",label:"Threshold Build",dur:"45 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("Tempo Run","tempoRun",1,"25 min continuous","—",7),
+    ex("Cool-Down Jog","running",1,"5 min easy","—",3),
+    ex("Kettlebell Swing","kbSwing",3,"15 reps","60 sec",6),
+  ]},
+  {day:12,week:2,type:"Station Work",label:"All 8 Stations — 2×",dur:"80 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("SkiErg","skiErg",2,"250 m","2 min",7),
+    ex("Sled Push","sledPush",2,"20 m","2 min",7),
+    ex("Sled Pull","sledPull",2,"20 m","2 min",7),
+    ex("Burpee Broad Jump","burpeeBroadJump",2,"10 reps","2 min",7),
+    ex("Rowing (Concept 2)","rowing",2,"500 m","2 min",7),
+    ex("Farmers Carry","farmersCarry",2,"50 m","2 min",7),
+    ex("Sandbag Lunges","sandbagLunge",2,"20 m","2 min",7),
+    ex("Wall Balls","wallBalls",2,"20 reps","2 min",7),
+  ]},
+  {day:13,week:2,type:"Active Recovery",label:"Flush & Mobility",dur:"30 min",exercises:[
+    ex("Easy Walk / Jog","running",1,"15 min very easy","—",2),
+    ex("Goblet Squat","gobletSquat",2,"10 reps light","60 sec",3),
+    ex("Plank Hold","plank",2,"40 sec","30 sec",3),
+  ]},
+  {day:14,week:2,type:"REST",label:"Full Recovery",dur:"—",exercises:[]},
+  {day:15,week:3,type:"Running Intervals",label:"Race-Pace Speed Work",dur:"55 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("1 km Race-Pace Intervals","running",6,"1 km @ target race pace","2 min walk",8),
+    ex("Cool-Down Jog","running",1,"5 min easy","—",3),
+  ]},
+  {day:16,week:3,type:"Hyrox Simulation",label:"Run–Station × 4",dur:"70 min",exercises:[
+    ex("1 km Run","running",1,"@ race pace","—",8),
+    ex("SkiErg","skiErg",1,"1 000 m race distance","—",8),
+    ex("1 km Run","running",1,"@ race pace","—",8),
+    ex("Sled Push","sledPush",1,"50 m race load","—",9),
+    ex("1 km Run","running",1,"@ race pace","—",8),
+    ex("Sled Pull","sledPull",1,"50 m race load","—",9),
+    ex("1 km Run","running",1,"@ race pace","—",8),
+    ex("Burpee Broad Jump","burpeeBroadJump",1,"80 m race distance","—",9),
+  ]},
+  {day:17,week:3,type:"Strength",label:"Power Focus",dur:"60 min",exercises:[
+    ex("Box Jump","boxJump",5,"5 reps — max height","90 sec",8),
+    ex("Romanian Deadlift","rdl",5,"6 reps heavy","2 min",8),
+    ex("Kettlebell Swing","kbSwing",5,"12 reps heavy","75 sec",8),
+    ex("Sandbag Lunges","sandbagLunge",4,"20 alternating reps","90 sec",8),
+    ex("Farmers Carry","farmersCarry",3,"60 m @ race weight","90 sec",8),
+  ]},
+  {day:18,week:3,type:"Tempo Run",label:"Race Effort Prep",dur:"45 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("Tempo Run","tempoRun",1,"30 min @ race effort","—",8),
+    ex("Cool-Down Jog","running",1,"5 min easy","—",3),
+  ]},
+  {day:19,week:3,type:"Hyrox Simulation",label:"Run–Station × 4 (Back Half)",dur:"80 min",exercises:[
+    ex("1 km Run","running",1,"@ race pace","—",8),
+    ex("Rowing (Concept 2)","rowing",1,"1 000 m race distance","—",8),
+    ex("1 km Run","running",1,"@ race pace","—",8),
+    ex("Farmers Carry","farmersCarry",1,"200 m race distance","—",8),
+    ex("1 km Run","running",1,"@ race pace","—",8),
+    ex("Sandbag Lunges","sandbagLunge",1,"100 m race distance","—",9),
+    ex("1 km Run","running",1,"@ race pace","—",8),
+    ex("Wall Balls","wallBalls",1,"75 reps — race standard","—",9),
+  ]},
+  {day:20,week:3,type:"Active Recovery",label:"Flush & Restore",dur:"25 min",exercises:[
+    ex("Easy Walk / Jog","running",1,"20 min very easy","—",2),
+    ex("Plank Hold","plank",2,"30 sec","30 sec",3),
+  ]},
+  {day:21,week:3,type:"REST",label:"Full Recovery",dur:"—",exercises:[]},
+  {day:22,week:4,type:"Easy Run",label:"Taper Begins",dur:"35 min",exercises:[
+    ex("Easy Jog","running",1,"20 min @ RPE 4–5","—",4),
+    ex("Running Strides","strides",4,"100 m @ 90% effort","90 sec walk",8),
+    ex("Cool-Down Walk","running",1,"5 min easy","—",2),
+  ]},
+  {day:23,week:4,type:"Station Work",label:"Light Sim — 75% Volume",dur:"45 min",exercises:[
+    ex("SkiErg","skiErg",3,"250 m @ 75% effort","90 sec",6),
+    ex("Rowing (Concept 2)","rowing",3,"500 m @ 75% effort","90 sec",6),
+    ex("Wall Balls","wallBalls",3,"15 reps","75 sec",6),
+    ex("Burpee Broad Jump","burpeeBroadJump",2,"8 reps — form focus","90 sec",6),
+  ]},
+  {day:24,week:4,type:"Strength",label:"Maintenance — Low Volume",dur:"40 min",exercises:[
+    ex("Goblet Squat","gobletSquat",3,"8 reps moderate","90 sec",6),
+    ex("Romanian Deadlift","rdl",3,"8 reps moderate","90 sec",6),
+    ex("Kettlebell Swing","kbSwing",3,"10 reps","60 sec",6),
+    ex("Farmers Carry","farmersCarry",2,"40 m","90 sec",5),
+  ]},
+  {day:25,week:4,type:"Running Intervals",label:"Leg Freshener",dur:"30 min",exercises:[
+    ex("Warm-Up Jog","running",1,"5 min easy","—",3),
+    ex("400m Run Intervals","running",4,"400 m @ race pace","2 min walk",8),
+    ex("Cool-Down Jog","running",1,"5 min easy","—",3),
+  ]},
+  {day:26,week:4,type:"Active Recovery",label:"Stay Loose",dur:"20 min",exercises:[
+    ex("Easy Walk / Jog","running",1,"15 min very easy","—",2),
+    ex("Plank Hold","plank",2,"30 sec","30 sec",3),
+  ]},
+  {day:27,week:4,type:"REST",label:"Full Rest",dur:"—",exercises:[]},
+  {day:28,week:4,type:"REST",label:"Pre-Race Rest",dur:"—",exercises:[]},
+  {day:29,week:4,type:"Race Activation",label:"Pre-Race Primer",dur:"20 min",exercises:[
+    ex("Easy Jog","running",1,"10 min very easy","—",3),
+    ex("Running Strides","strides",3,"80 m @ 85% — open the legs","2 min",7),
+    ex("Box Jump","boxJump",2,"3 reps — feel explosive","90 sec",6),
+    ex("Wall Balls","wallBalls",1,"10 reps — feel the rhythm","—",5),
+  ]},
+  {day:30,week:4,type:"RACE DAY",label:"It's Go Time 🏅",dur:"60–90 min race",exercises:[
+    ex("10-min Race Warm-Up","running",1,"Easy jog + 3 strides","—",4),
+    ex("SkiErg Station","skiErg",1,"1 000 m — steady rhythm, don't blow up early","—",8),
+    ex("Sled Push Station","sledPush",1,"50 m — drive and breathe","—",9),
+    ex("Sled Pull Station","sledPull",1,"50 m — strong back, power from hips","—",9),
+    ex("Burpee Broad Jump Stn","burpeeBroadJump",1,"80 m — stay low, explosive hips","—",9),
+    ex("Rowing Station","rowing",1,"1 000 m — legs first every stroke","—",8),
+    ex("Farmers Carry Station","farmersCarry",1,"200 m — tall posture, steady strides","—",8),
+    ex("Sandbag Lunges Station","sandbagLunge",1,"100 m — chest up, powerful drive","—",9),
+    ex("Wall Balls Station","wallBalls",1,"75–100 reps — catch and squat, use the rebound","—",9),
+  ]},
+];
+
+/* ── STATE ── */
+let completed = new Set();
+try{ const s=localStorage.getItem("hyrox_v2"); if(s) completed=new Set(JSON.parse(s)); }catch{}
+let currentDay = 1;
+
+function save(){ try{localStorage.setItem("hyrox_v2",JSON.stringify([...completed]));}catch{} }
+
+/* ── HELPERS ── */
+function rpeColor(r){ return r<=3?"#39d353":r<=5?"#7ab8ff":r<=7?"#f0a500":r<=8?"#ff8c00":"#f85149"; }
+
+/* ── CALENDAR ── */
+function buildCal(){
+  const grid=document.getElementById("cal-grid");
+  grid.innerHTML="";
+  const wkNames=["","Week 1","Week 2","Week 3","Week 4","Race Week"];
+  for(let row=0;row<5;row++){
+    const block=document.createElement("div");
+    block.className="week-block";
+    // week label from first non-null day in row
+    const firstDay=DAYS[row*7];
+    const wkNum=firstDay?firstDay.week:4;
+    const wkLabel=row<4?wkNames[wkNum]:"Race Week";
+    block.innerHTML=`<div class="week-label">${wkLabel}</div>`;
+    const rowEl=document.createElement("div");
+    rowEl.className="week-row";
+    for(let col=0;col<7;col++){
+      const idx=row*7+col;
+      if(idx>=30){rowEl.appendChild(document.createElement("div"));continue;}
+      const d=DAYS[idx];
+      const meta=TYPE_META[d.type]||{ac:"#c8f400",icon:"💪"};
+      const isDone=completed.has(d.day);
+      const isRest=d.type==="REST";
+      const isRace=d.type==="RACE DAY";
+      const btn=document.createElement("button");
+      btn.className="day-btn"+(isRest?" rest-day":"")+(isDone?" done":"");
+      if(isDone) btn.style.setProperty("--done-ac",meta.ac);
+      let iconHtml;
+      if(isDone) iconHtml="✓";
+      else if(isRace) iconHtml="🏅";
+      else if(isRest) iconHtml="—";
+      else iconHtml=`<div class="day-dot" style="background:${meta.ac}"></div>`;
+      btn.innerHTML=`<div class="day-num" style="color:${isDone?meta.ac:isRest?"#4a5568":"var(--text)"}">${d.day}</div><div class="day-icon">${iconHtml}</div>`;
+      btn.onclick=()=>showDay(d.day);
+      rowEl.appendChild(btn);
+    }
+    block.appendChild(rowEl);
+    grid.appendChild(block);
+  }
+  updateProgress();
+}
+
+function updateProgress(){
+  const pct=Math.round((completed.size/30)*100);
+  document.getElementById("prog-fill").style.width=pct+"%";
+  document.getElementById("prog-pct").textContent=pct+"%";
+  document.getElementById("cal-sub").textContent=`${completed.size} of 30 sessions complete`;
+}
+
+/* ── DAY VIEW ── */
+function showDay(day){
+  currentDay=day;
+  renderDay();
+  document.getElementById("cal-page").classList.remove("active");
+  document.getElementById("day-page").classList.add("active");
+  window.scrollTo(0,0);
+}
+
+function showCal(){
+  document.getElementById("day-page").classList.remove("active");
+  document.getElementById("cal-page").classList.add("active");
+  buildCal();
+  window.scrollTo(0,0);
+}
+
+function navDay(dir){
+  const next=currentDay+dir;
+  if(next>=1&&next<=30) showDay(next);
+}
+
+function renderDay(){
+  const d=DAYS[currentDay-1];
+  const meta=TYPE_META[d.type]||{ac:"#c8f400",icon:"💪"};
+  const isDone=completed.has(d.day);
+  const isRest=d.type==="REST";
+  const isRace=d.type==="RACE DAY";
+
+  // nav buttons
+  document.getElementById("prev-btn").disabled=currentDay<=1;
+  document.getElementById("next-btn").disabled=currentDay>=30;
+
+  // header
+  const header=document.getElementById("day-header");
+  header.style.background=`linear-gradient(135deg,${meta.ac}12 0%,var(--bg) 100%)`;
+  header.style.borderBottom=`1px solid ${meta.ac}20`;
+  let statsHtml="";
+  if(!isRest){
+    statsHtml=`<div class="day-stats">
+      <div class="stat-box"><div class="stat-val" style="color:${meta.ac}">${d.dur}</div><div class="stat-lbl">DURATION</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:${meta.ac}">${d.exercises.length}</div><div class="stat-lbl">EXERCISES</div></div>
+    </div>`;
+  }
+  header.innerHTML=`
+    <div class="day-week-label" style="color:${meta.ac}">${WK_LABELS[d.week]||"Race Week"} · DAY ${d.day} OF 30</div>
+    <div class="day-title-row">
+      <div class="day-icon-big">${meta.icon}</div>
+      <div><div class="day-type">${d.type}</div><div class="day-sublabel">${d.label}</div></div>
+    </div>
+    ${statsHtml}`;
+
+  // body
+  const body=document.getElementById("day-body");
+  let html="";
+  if(isRest){
+    html=`<div class="rest-empty">
+      <div class="rest-emoji">😴</div>
+      <div class="rest-title">Rest Day</div>
+      <div class="rest-text">Adaptation happens at rest. Sleep 8+ hours, eat well, and let your body absorb the training load.</div>
+    </div>`;
+  } else {
+    if(isRace){
+      html+=`<div class="race-banner">
+        <div class="race-banner-title">🏅 RACE DAY STRATEGY</div>
+        <div class="race-banner-text">Conservative on runs 1–2. Trust every rep you've done. Attack the final 2 km.</div>
+      </div>`;
+    } else {
+      html+=`<div class="section-label">EXERCISES — TAP FOR TECHNIQUE CUES</div>`;
+    }
+    d.exercises.forEach((e,i)=>{ html+=buildExCard(e,i); });
+  }
+  const btnClass=isDone?"done":"todo";
+  const btnLabel=isDone?"✓ COMPLETED":isRest?"MARK REST TAKEN":"MARK COMPLETE";
+  html+=`<button class="complete-btn ${btnClass}" id="complete-btn" onclick="toggleComplete(${d.day})">${btnLabel}</button>`;
+  body.innerHTML=html;
+  // re-attach howto toggles
+  body.querySelectorAll(".ex-inner[data-idx]").forEach(el=>{
+    el.addEventListener("click",()=>toggleHowTo(parseInt(el.dataset.idx),d));
+  });
+}
+
+function buildExCard(e,i){
+  const hasCues=!!HT[e.ht];
+  const rpeC=rpeColor(e.rpe);
+  let badges=``;
+  if(e.sets>1) badges+=`<span class="badge badge-sets">${e.sets}× sets</span>`;
+  badges+=`<span class="badge badge-detail">${e.detail}</span>`;
+  if(e.rest!=="—") badges+=`<span class="badge badge-rest">⏱ ${e.rest}</span>`;
+  badges+=`<span class="badge badge-rpe" style="background:${rpeC}15;border-color:${rpeC}35;color:${rpeC}">RPE ${e.rpe}</span>`;
+  return `<div class="ex-card" id="exc-${i}">
+    <div class="ex-inner" data-idx="${i}" ${hasCues?'style="cursor:pointer"':''}>
+      <div class="ex-row">
+        <div class="ex-num">${i+1}</div>
+        <div class="ex-content">
+          <div class="ex-name-row">
+            <span class="ex-name">${e.n}</span>
+            ${hasCues?`<span class="ex-chevron">▼</span>`:""}
+          </div>
+          <div class="ex-badges">${badges}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleHowTo(idx, d){
+  const e=d.exercises[idx];
+  if(!HT[e.ht]) return;
+  const card=document.getElementById("exc-"+idx);
+  const inner=card.querySelector(".ex-inner");
+  const chevron=card.querySelector(".ex-chevron");
+  const existing=card.querySelector(".howto");
+  if(existing){
+    existing.remove();
+    card.classList.remove("open");
+    if(chevron) chevron.textContent="▼";
+  } else {
+    card.classList.add("open");
+    if(chevron) chevron.textContent="▲";
+    const cues=HT[e.ht];
+    let cueHtml=cues.map((c,i)=>`<div class="howto-cue"><span class="howto-n">${i+1}.</span><span class="howto-text">${c}</span></div>`).join("");
+    const div=document.createElement("div");
+    div.className="howto";
+    div.innerHTML=`<div class="howto-label">HOW TO</div>${cueHtml}`;
+    inner.appendChild(div);
+  }
+}
+
+function toggleComplete(day){
+  if(completed.has(day)) completed.delete(day);
+  else completed.add(day);
+  save();
+  renderDay();
+}
+
+/* ── INIT ── */
+buildCal();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
